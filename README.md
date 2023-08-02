@@ -13,10 +13,12 @@ This pipeline currently only accepts paired-end reads as inputs.
 1. Adapter trimming and quality control using fastp (0.22.0)
 2. Removal of host (human) reads by mapping to a reference genome using bwa (0.7.17) 
 3. Taxonomic classification of non-human reads
+
    a. using Kraken2 (2.1.2) and taxonomic abundance re-estimation using Bracken (2.6.1)
+
    b. using Metaphlan4 (4.0.6) 
-4. Functional annotation of reads using HUMANN3
-5. Resistome annotation of reads using SRST2
+5. Functional annotation of reads using HUMANN3
+6. Resistome annotation of reads using SRST2
 
 ## Quick Start
 
