@@ -4,7 +4,7 @@
 ========================================================================================
     Shotgun metagenomics and metatranscriptomics 
 ========================================================================================
-    Github : https://github.com/Chiamh/meta-omics-nf
+    Github : https://github.com/indrikwijaya/shotgunmetagenomics-nf
 ----------------------------------------------------------------------------------------
 */
 
@@ -19,6 +19,9 @@ nextflow.enable.dsl=2
 //https://www.baeldung.com/groovy-def-keyword
 //https://www.nextflow.io/blog/2020/cli-docs-release.html
 
+// Constants
+def profilers_expected = ['kraken2', 'metaphlan4', 'humann3', 'srst2', 'strainphlan'] as Set
+
 def helpMessage() {
   // adapted from nf-core
     log.info"""
@@ -26,71 +29,63 @@ def helpMessage() {
     Usage for main workflow:
     The typical command for running the pipeline is as follows:
       nextflow run main.nf
-      --rna_reads FOLDER_FOR_RNA_READS
-      --dna_reads FOLDER_FOR_DNA_READS
+      --read_path FOLDER_FOR_read_path
       --bwaidx_path FOLDER_FOR_HUMAN_GENOME_AND_BWA_INDEX
       --bwaidx NAME_OF_BWA_INDEX
-      --star_index FOLDER_FOR_STAR_INDEX_FOR_HUMAN_GENOME
-      --ribokmers FOLDER_FOR_BBMAP_RIBOKMERS
       --kraken2db FOLDER_FOR_KRAKEN2_AND_BRACKEN_DB
-      --pangenome_path FOLDER_FOR_PANGENOME_AND_BOWTIE2_INDEX
-	  --pangenome	NAME_OF_PANGENOME_BOWTIE2_INDEX
-      --dmnddb PATH_TO_DIAMOND2_DB
+      --metaphlan4db FOLDER_FOR_METAPHLAN4
+      --humann3db FOLDER_FOR_HUMANN3
+      --srst2db FOLDER_FOR_SRST2
+
     
 	NOTE: A more user-friendly approach is to specify these parameters in a *.config file under a custom profile 
-	
-    IMPT: Set either the --process_rna or --process_dna arguments to false if no RNA or DNA reads are provided, respsectively. 
     
     The main workflow can take up a lot of disk space with intermediate fastq files. 
     
     If this is a problem, the workflow can be run as two separate modules.
-    The decontaminate module removes the intermediate files and is not compatible with nextflow -resume
-    The classify module is still compatible with nextflow -resume because the smaller intemediate files are kept in the nextflow work/ directory
-    The classify module assumes gzipped compressed reads as direct inputs to Kraken2
-    
-    Usage for alternative workflow:
-    nextflow run main.nf -entry decontaminate [args]...
-    nextflow run main.nf -entry classify [args]...
     
     Input and database arguments are null by default.
     Rather than manually specifying the paths to so many databases, it is best to create a custom nextflow config file.
      
     Input arguments:
-      --rna_reads                   Path to a folder containing all input metatranscriptomic reads (this will be recursively searched for *fastq.gz/*fq.gz/*fq/*fastq files)
-      --dna_reads                   Path to a folder containing all input metagenomic reads (this will be recursively searched for *fastq.gz/*fq.gz/*fq/*fastq files)
-    Database arguments:
-      --bwaidx_path                 Path to the folder with host (human) reference genome and bwa index
-      --bwaidx			    Name of the bwa index e.g. hg38.fa
-      --star_index                  Path to the directory containing the index for the human genome for STAR aligner
-      --ribokmers                   Path to the eukaryotic and prokaryotic ribokmer database for computational rRNA removal using BBmap
-      --kraken2db                   Path to the Kraken2 and Bracken databases
-      --pangenome_path              Path to the folder with bowtie2 index for custom-built microbial pangenome/gene catalog
-      --pangenome                   Name of the bowtie2 index for the pangenome/gene catalog e.g. IHSMGC
-      --dmnddb                      Path to a custom-built Diamond 2 database (e.g. *.dmnd)
-      --eggnog_db                   Path to folder containing the eggnog database
-      --eggnog_OG_annots            Path to a pre-built e5.og_annotations.tsv file, downloaded from http://eggnog5.embl.de/download/eggnog_5.0, sorted by EGGNOG ID
-      --uniref90_fasta              Path to fasta file containing amino acid sequences from Uniref90
-      --uniref90_GO                 Path to two column .tsv file derived from https://ftp.uniprot.org/pub/databases/uniprot/knowledgebase/idmapping/idmapping_selected.tab.gz
-      --pangenome_annots            Path to pre-computed eggnog annotations for pangenome
-      --spike_in_path		    Path to file denoting genera/species to remove from metagenomes before functional profiling, because they are spike-ins
+      --read_path                   Path to a folder containing all input metagenomic reads (this will be recursively searched for *fastq.gz/*fq.gz/*fq/*fastq files)
+
+    Output arguments:
+      --outdir                      Output directory [Default: ./pipeline_output/]
+
+    Decont arguments:
+      --bwaidx_path                 Path to the folder with host (human/mouse) reference genome and bwa index
+      --bwaidx			                Name of the bwa index e.g. hg38.fa
+     
+    Profilers options:
+      --profilers                   Metagenomic profilers to run [Default: kraken2, metaphlan4, humann3, srst2]
+   
+   Kraken2 options:
+      --kraken2db                   Path to Kraken2 and Bracken databases
+
     Bracken options:
       --readlength                  Length of Bracken k-mers to use [default: 150]
-    Workflow options:
-      -entry                        Can be one of [decontaminate, classify]. For disk space saving workflows. Note SINGLE dash.
-      --process_rna                 Turns on steps to process metatranscriptomes [Default: true]. If true, --rna_reads is a mandatory argument
-      --process_dna                 Turns on steps to process metagenomes [Default: true]. If true, --dna_reads is a mandatory argument
-      --decont_off                  Skip trimming, QC and decontamination steps [Default: false]
-      --profilers_off               Skip Kraken2 and Bracken steps [Default: false]
-      --panalign_off                Skip pangenome alignment with bowtie 2. Will also skip translated search with Diamond [Default: false]
-      --diamond_off                 Skip translated search with Diamond [Default: false]
-      --rm_spikes                   Removes spike in sequences from metagenomes [Default: true]
-      --annotate_off                Skip functional annotation using Eggnog and Uniref90 [Default: false]
+
+    MetaPhlAn4 arguments:
+      --metaphlan4db          Path to the metaphlan4 database
+      --metaphlan4_index            Bowtie2 index prefix for the marker genes [Default: mpa_vOct22_CHOCOPhlAnSGB_202212]
+      --metaphlan4_pkl              Python pickle file for marker genes [mpa_vOct22_CHOCOPhlAnSGB_202212.pkl]
+
+    HUMAnN3 arguments:
+      --humann3_nt                  Path to humann3 chocophlan database
+      --humann3_protein             Path to humann3 protein database
+
+    SRST2 arguments:
+      --srst2_ref                   Fasta file used for srst2
+
     Output arguments:
       --outdir                      The output directory where the results will be saved [Default: ./pipeline_results]
       --tracedir                    The directory where nextflow logs will be saved [Default: ./pipeline_results/pipeline_info]
+
     AWSBatch arguments:
       --awsregion                   The AWS Region for your AWS Batch job to run on [Default: false]
       --awsqueue                    The AWS queue for your AWS Batch job to run on [Default: false]
+
     Others:
       --help		            Display this help message
     """
@@ -101,41 +96,119 @@ if (params.help){
     exit 0
 }
 
+// Parameters sanity checking
+//def parameter_diff = params.keySet() - parameters_expected
+//if (parameter_diff.size() != 0){
+//   exit 1, "[Pipeline error] Parameter(s) $parameter_diff is/are not valid in the pipeline!\n"
+//}
+
+// AWSBatch sanity checking
+if(workflow.profile.contains('awsbatch')){
+    if (!params.awsqueue || !params.awsregion) exit 1, "Specify correct --awsqueue and --awsregion parameters on AWSBatch!"
+    //if (!params.outdir.startsWith('s3')) exit 1, "Specify S3 URLs for outdir parameters on AWSBatch!"
+}
+
+// Nextflow version sanity checking
+//if( ! nextflow.version.matches("$workflow.manifest.nextflowVersion") ){
+//    exit 1, "[Pipeline error] Nextflow version $workflow.manifest.nextflowVersion required! You are running v$workflow.nextflow.version!\n" 
+//}
+
+// // Input sanity checking
+// if (params.containsKey('read_path') && params.containsKey('reads') && params.read_path && params.reads){
+//    exit 1, "[Pipeline error] Please specify your input using ONLY ONE of `--read_path` and `--reads`!\n"
+// }
+// if (params.containsKey('read_path') && params.read_path){
+//    ch_reads = Channel
+//         .fromFilePairs([params.read_path + '/**{R,.,_}{1,2}*f*q*'], flat: true, checkIfExists: true) {file -> file.name.replaceAll(/[-_].*/, '')}
+// } else if (params.containsKey('reads') && params.reads) {
+//    ch_reads = Channel
+//         .fromFilePairs(params.reads, flat: true, checkIfExists: true) {file -> file.name.replaceAll(/[-_].*/, '')}
+// } else {
+//    exit 1, "[Pipeline error] Please specify your input using `--read_path` or `--reads`!\n"
+// }
+
+// Profiler sanity checking
+def profilers = [] as Set
+if(params.profilers.getClass() != Boolean){
+    def profilers_input = params.profilers.split(',') as Set
+    def profiler_diff = profilers_input - profilers_expected
+    profilers = profilers_input.intersect(profilers_expected)
+    if( profiler_diff.size() != 0 ) {
+    	log.warn "[Pipeline warning] Profiler $profiler_diff is not supported yet! Will only run $profilers.\n"
+    }
+}
+
+// Decont
+if (!params.bwaidx_path && !params.decont_off){
+    helpMessage()
+    log.info"""
+    [Error] --bwaidx_path is required for removal of host (human) reads from metagenomic sequences (decontamination step)
+    """.stripIndent()
+    exit 0
+}
+
+// Kraken2
+if (!params.kraken2db && !params.profilers_off){
+    helpMessage()
+    log.info"""
+    [Error] --kraken2db is required for taxonomic classification
+    """.stripIndent()
+    exit 0
+}
 
 /*
 ========================================================================================
-    Include modules
+    Define channels for read pairs
 ========================================================================================
 */
 
-include { FULL } from './workflows/full_workflow.nf'
-include { DECONT } from './workflows/decont.nf'
-include { PROFILE } from './workflows/classify.nf'
+Channel.fromFilePairs( [params.read_path + '/**{R,.,_}{1,2}*{fastq,fastq.gz,fq,fq.gz}'], checkIfExists:true ).set{ ch_reads }
 
-/*
-========================================================================================
-    Main workflow (default)
-========================================================================================
-*/
+// import modules
+include { DECONT } from './modules/decont.nf' 
+include { KRAKEN2 } from './modules/kraken2.nf'
+include { BRACKEN } from './modules/bracken.nf' 
+include { METAPHLAN4 } from './modules/metaphlan4.nf' 
+include { HUMANN3 } from './modules/humann3.nf' 
+//include { SRST2 } from './modules/srst2.nf' 
 
-// this main workflow will generate all intermediate files and can be resumed with nextflow
+// TODO: is there any elegant method to do this?
+include { SPLIT_PROFILE } from './modules/split_tax_profile.nf' 
+//include { SPLIT_PROFILE } as SPLIT_KRAKEN2 from './modules/split_tax_profile.nf'
+
+
+// processes
 workflow {
-    
-    FULL ()
-     
-}
+  
+  //DECONT
+    if(!params.decont_off){
+	    DECONT(params.bwaidx_path, ch_reads)
+	    ch_reads_qc = DECONT.out.reads
+    } else{
+      ch_reads_qc = ch_reads
+    }
 
-//modular named workflows to reduce intermediate file size. 
-//warning: the decontaminate named workflow is not compatible with nextflow -resume because intermediate files are deleted to save space
-workflow decontaminate {
-    
-    DECONT ()
-}
+  //KRAKEN2
+    if(profilers.contains('kraken2')){
+        KRAKEN2(params.kraken2db, ch_reads_qc)
+        BRACKEN(params.kraken2db, params.readlength, KRAKEN2.out.k2tax)
+    }
 
-// This classify workflow can be resumed with nextflow
-// Typical use is to specify the path to already decontaminated reads with --rna_reads and/or --dna_reads
-// Assumes gzipped compressed reads
-workflow classify {
-    
-    PROFILE ()
+  //METAPHLAN4
+    if(profilers.contains('metaphlan4')){
+        METAPHLAN4(params.metaphlan4db, ch_reads_qc)
+        //SPLIT_PROFILE(METAPHLAN4.out.m4tax)
+    }
+  
+  //HUMANN3
+
+    if(profilers.contains('humann3')){
+        humann3_INDEX(params.humann3_nt, metaphlan4.out)
+        humann3(params.humann3_protein, ch_reads_qc.join(humann3_INDEX.out))
+    }
+  
+  //SRST2
+    // if(profilers.contains('srst2')){
+    //     SRST2(params.srst2db, ch_reads_qc)
+    // }
 }

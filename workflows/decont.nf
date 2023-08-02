@@ -14,15 +14,11 @@ def helpMessage() {
     Usage for main workflow:
     The typical command for running the pipeline is as follows:
       nextflow run main.nf
-      --rna_reads FOLDER_FOR_RNA_READS
       --dna_reads FOLDER_FOR_DNA_READS
       --bwaidx_path FOLDER_FOR_HUMAN_GENOME_AND_BWA_INDEX
       --bwaidx NAME_OF_BWA_INDEX
-      --star_index FOLDER_FOR_STAR_INDEX_FOR_HUMAN_GENOME
-      --ribokmers FOLDER_FOR_BBMAP_RIBOKMERS
       --kraken2db FOLDER_FOR_KRAKEN2_AND_BRACKEN_DB
-      --pangenome_path FOLDER_FOR_PANGENOME_AND_BOWTIE2_INDEX
-	  --pangenome	NAME_OF_PANGENOME_BOWTIE2_INDEX
+
       --dmnddb PATH_TO_DIAMOND2_DB
     
 	NOTE: A more user-friendly approach is to specify these parameters in a *.config file under a custom profile 
@@ -44,43 +40,49 @@ def helpMessage() {
     Rather than manually specifying the paths to so many databases, it is best to create a custom nextflow config file.
      
     Input arguments:
-      --rna_reads                   Path to a folder containing all input metatranscriptomic reads (this will be recursively searched for *fastq.gz/*fq.gz/*fq/*fastq files)
       --dna_reads                   Path to a folder containing all input metagenomic reads (this will be recursively searched for *fastq.gz/*fq.gz/*fq/*fastq files)
+
     Database arguments:
       --bwaidx_path                 Path to the folder with host (human) reference genome and bwa index
-      --bwaidx			    Name of the bwa index e.g. hg38.fa
-      --star_index                  Path to the directory containing the index for the human genome for STAR aligner
-      --ribokmers                   Path to the eukaryotic and prokaryotic ribokmer database for computational rRNA removal using BBmap
+      --bwaidx			                Name of the bwa index e.g. hg38.fa
       --kraken2db                   Path to the Kraken2 and Bracken databases
-      --pangenome_path              Path to the folder with bowtie2 index for custom-built microbial pangenome/gene catalog
-      --pangenome                   Name of the bowtie2 index for the pangenome/gene catalog e.g. IHSMGC
-      --dmnddb                      Path to a custom-built Diamond 2 database (e.g. *.dmnd)
-      --eggnog_db                   Path to folder containing the eggnog database
-      --eggnog_OG_annots            Path to a pre-built e5.og_annotations.tsv file, downloaded from http://eggnog5.embl.de/download/eggnog_5.0, sorted by EGGNOG ID--eggnog_OG_annots
-      --uniref90_fasta              Path to fasta file containing amino acid sequences from Uniref90
-      --uniref90_GO                 Path to two column .tsv file derived from https://ftp.uniprot.org/pub/databases/uniprot/knowledgebase/idmapping/idmapping_selected.tab.gz
-      --pangenome_annots            Path to pre-computed eggnog annotations for pangenome
-    Bracken options:
-      --readlength                  Length of Bracken k-mers to use [default: 150]
+      
     Workflow options:
       -entry                        Can be one of [decontaminate, classify]. For disk space saving workflows. Note SINGLE dash.
-      --process_rna                 Turns on steps to process metatranscriptomes [Default: true]. If true, --rna_reads is a mandatory argument
       --process_dna                 Turns on steps to process metagenomes [Default: true]. If true, --dna_reads is a mandatory argument
       --decont_off                  Skip trimming, QC and decontamination steps [Default: false]
-      --profilers_off               Skip Kraken2 and Bracken steps [Default: false]
-      --panalign_off                Skip pangenome alignment with bowtie 2. Will also skip translated search with Diamond [Default: false]
-      --diamond_off                 Skip translated search with Diamond [Default: false]
-      --annotate_off                Skip functional annotation using Eggnog and Uniref90 [Default: false]
+     
+    Profilers options:
+      --profilers                   Metagenomic profilers to run [Default: kraken2, metaphlan4, humann3, srst2]
+
+    Bracken options:
+      --readlength                  Length of Bracken k-mers to use [default: 150]
+
+    MetaPhlAn4 arguments:
+      --metaphlan4_refpath          Path to the metaphlan2 database
+      --metaphlan4_index            Bowtie2 index prefix for the marker genes [Default: mpa_vOct22_CHOCOPhlAnSGB_202212]
+      --metaphlan4_pkl              Python pickle file for marker genes [mpa_vOct22_CHOCOPhlAnSGB_202212.pkl]
+
+    HUMAnN3 arguments:
+      --humann3_nt                  Path to humann3 chocophlan database
+      --humann3_protein             Path to humann3 protein database
+
+    SRST2 arguments:
+      --srst2_ref                   Fasta file used for srst2
+
     Output arguments:
       --outdir                      The output directory where the results will be saved [Default: ./pipeline_results]
       --tracedir                    The directory where nextflow logs will be saved [Default: ./pipeline_results/pipeline_info]
+
     AWSBatch arguments:
       --awsregion                   The AWS Region for your AWS Batch job to run on [Default: false]
       --awsqueue                    The AWS queue for your AWS Batch job to run on [Default: false]
+
     Others:
       --help		            Display this help message
     """
 }
+ 
 
 if (params.help){
     helpMessage()
