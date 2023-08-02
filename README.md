@@ -1,4 +1,4 @@
-# Shotgun Metagenomics & Metatranscriptomics Nextflow Pipeline
+# Shotgun Metagenomics Nextflow Pipeline
 
 ## Introduction
 
