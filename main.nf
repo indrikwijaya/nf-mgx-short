@@ -20,7 +20,7 @@ nextflow.enable.dsl=2
 //https://www.nextflow.io/blog/2020/cli-docs-release.html
 
 // Constants
-def profilers_expected = ['kraken2', 'metaphlan4', 'humann3', 'srst2', 'strainphlan'] as Set
+def profilers_expected = ['kraken2', 'metaphlan4', 'humann3', 'srst2', 'megahit'] as Set
 
 def helpMessage() {
   // adapted from nf-core
@@ -170,6 +170,7 @@ include { KRAKEN2 } from './modules/kraken2.nf'
 include { BRACKEN } from './modules/bracken.nf' 
 include { METAPHLAN4 } from './modules/metaphlan4.nf' 
 include { HUMANN3 } from './modules/humann3.nf' 
+include { MEGAHIT } from './modules/megahit.nf'
 //include { SRST2 } from './modules/srst2.nf' 
 
 // TODO: is there any elegant method to do this?
@@ -201,12 +202,16 @@ workflow {
     }
   
   //HUMANN3
-
     if(profilers.contains('humann3')){
         humann3_INDEX(params.humann3_nt, metaphlan4.out)
         humann3(params.humann3_protein, ch_reads_qc.join(humann3_INDEX.out))
     }
   
+  //MEGAHIT
+    if(profilers.contains('megahit')) {
+      megahit(ch_reads_qc)
+    }
+
   //SRST2
     // if(profilers.contains('srst2')){
     //     SRST2(params.srst2db, ch_reads_qc)

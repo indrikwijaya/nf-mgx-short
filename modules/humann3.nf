@@ -1,8 +1,5 @@
-// Kraken2 classification
+// HUMANN3 Annotation
 
-/*
-It is encouraged for users to run kraken2 with at least 10-20 threads. 
-*/
 
 process HUMANN3 {
 	label "process_high"
@@ -24,7 +21,7 @@ process HUMANN3 {
 	"""
 	# merge reads
 	cat ${reads_file} > ${sample_id}.fq.gz
-	
+
 	humann \\
 	--threads ${task.cpus} \\
 	-i ${sample_id}.fq.gz \\
