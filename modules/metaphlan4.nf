@@ -23,7 +23,7 @@ process METAPHLAN4 {
 	"""
 	metaphlan \\
 	${reads_file[0]},${reads_file[1]} \\
-	--nproc $task.cpus \\
+	--nproc ${task.cpus} \\
 	--input_type fastq \\
 	-t rel_ab_w_read_stats \\
 	--bowtie2out "${sample_id}.bt2.bz2" \\
