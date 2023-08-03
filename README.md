@@ -39,7 +39,7 @@ This pipeline currently only accepts paired-end reads as inputs.
 
 	```sh
 	$ cd bin/
-	$ chmod +x *
+	$ chmod +x ./nf-mgx-short/bin/*
 	```
 
 5. Run the pipeline
