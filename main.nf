@@ -198,7 +198,7 @@ workflow {
   //METAPHLAN4
     if(profilers.contains('metaphlan4')){
         METAPHLAN4(params.metaphlan4db, ch_reads_qc)
-        //SPLIT_PROFILE(METAPHLAN4.out.m4tax)
+        SPLIT_PROFILE(METAPHLAN4.out.m4tax)
     }
   
   //HUMANN3

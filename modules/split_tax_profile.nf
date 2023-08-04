@@ -15,8 +15,9 @@ process SPLIT_PROFILE {
 	
 	script:
 	"""
-	grep -v '^#' ${profile}   \\
+	cut -f1,3,4,5- ${profile} \\
+	  | grep -v '^#' \\
       | sed -E 's/.*\\|//'  \\
-      | awk -v prefix=${sample_id} '{var=substr(\$0, 1,1); print >sample_id"."var".tsv"} '
+      | awk -v prefix=${sample_id} '{var=substr(\$0, 1,1); print >prefix"."var".tsv"} '
 	"""
 }
