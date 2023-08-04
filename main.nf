@@ -209,7 +209,7 @@ workflow {
   
   //MEGAHIT
     if(profilers.contains('megahit')) {
-      megahit(ch_reads_qc)
+      MEGAHIT(ch_reads_qc)
     }
 
   //SRST2
