@@ -20,7 +20,7 @@ nextflow.enable.dsl=2
 //https://www.nextflow.io/blog/2020/cli-docs-release.html
 
 // Constants
-def profilers_expected = ['kraken2', 'metaphlan4', 'humann3', 'srst2', 'megahit'] as Set
+def profilers_expected = ['kraken2', 'metaphlan3', 'metaphlan4', 'humann3', 'srst2', 'megahit', 'pathoscope'] as Set
 
 def helpMessage() {
   // adapted from nf-core
@@ -168,9 +168,12 @@ Channel.fromFilePairs( [params.read_path + '/**{R,.,_}{1,2}*{fastq,fastq.gz,fq,f
 include { DECONT } from './modules/decont.nf' 
 include { KRAKEN2 } from './modules/kraken2.nf'
 include { BRACKEN } from './modules/bracken.nf' 
+include { METAPHLAN3 } from './modules/metaphlan3.nf' 
 include { METAPHLAN4 } from './modules/metaphlan4.nf' 
 include { HUMANN3 } from './modules/humann3.nf' 
 include { MEGAHIT } from './modules/megahit.nf'
+include { PATHOSCOPE } from './modules/pathoscope.nf'
+include { STATS_PATHOSCOPE } from './modules/stats_pathoscope.nf'
 //include { SRST2 } from './modules/srst2.nf' 
 
 // TODO: is there any elegant method to do this?
@@ -195,6 +198,12 @@ workflow {
         BRACKEN(params.kraken2db, params.readlength, KRAKEN2.out.k2tax)
     }
 
+  //METAPHLAN3
+    if(profilers.contains('metaphlan3')){
+        METAPHLAN3(params.metaphlan3db, ch_reads_qc)
+        SPLIT_PROFILE(METAPHLAN3.out.m3tax)
+    }
+
   //METAPHLAN4
     if(profilers.contains('metaphlan4')){
         METAPHLAN4(params.metaphlan4db, ch_reads_qc)
@@ -207,6 +216,11 @@ workflow {
         humann3(params.humann3_protein, ch_reads_qc.join(humann3_INDEX.out))
     }
   
+  //PATHOSCOPE
+    if(profilers.contains('pathoscope')){
+      PATHOSCOPE(params.patho_ref, params.patho_refdir, params.patho_filter, ch_reads_qc)
+      STATS_PATHOSCOPE(PATHOSCOPE.out.patho_sam, PATHOSCOPE.out.updated_patho_sam, ch_reads_qc, params.windows_bed)
+    }
   //MEGAHIT
     if(profilers.contains('megahit')) {
       MEGAHIT(ch_reads_qc)

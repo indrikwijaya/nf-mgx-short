@@ -5,7 +5,7 @@ process SPLIT_PROFILE {
 	label "process_low"
 	label "error_retry"
 	tag "${sample_id}"
-	publishDir "${params.outdir}/split_metaphlan4_out/", mode: 'copy'
+	publishDir "${params.outdir}/split_metaphlan3_out/", mode: 'copy'
 		
 	input:
 	tuple val(sample_id), path(profile)
