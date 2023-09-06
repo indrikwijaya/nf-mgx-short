@@ -219,7 +219,8 @@ workflow {
   //PATHOSCOPE
     if(profilers.contains('pathoscope')){
       PATHOSCOPE(params.patho_ref, params.patho_refdir, params.patho_filter, ch_reads_qc)
-      STATS_PATHOSCOPE(PATHOSCOPE.out.patho_sam, PATHOSCOPE.out.updated_patho_sam, ch_reads_qc, params.windows_bed)
+      stats_patho_in=PATHOSCOPE.out.patho_sam.join(PATHOSCOPE.out.updated_patho_sam).join(ch_reads_qc)
+      STATS_PATHOSCOPE(stats_patho_in, params.windows_bed)
     }
   //MEGAHIT
     if(profilers.contains('megahit')) {

@@ -7,9 +7,7 @@ process STATS_PATHOSCOPE {
 	publishDir "${params.outdir}/patho_out/", mode: 'copy'
 		
 	input:
-	tuple val(sample_id), path(patho_sam)
-	tuple val(sample_id), path(updated_patho_sam)
-	tuple val(sample_id), path(reads_file)
+	tuple val(sample_id), path(patho_sam), path(updated_patho_sam), path(reads_file)
 	path windows_bed
 	
 	output:
